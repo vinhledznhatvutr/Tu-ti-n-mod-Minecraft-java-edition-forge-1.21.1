@@ -29,8 +29,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Install Gradle (system)
-        run: sudo apt-get install -y gradle
+      - name: Setup Gradle 8.10.2
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.10.2'
+          cache-read-only: true   # tránh lỗi cache (nếu có)
 
       - name: Locate project and build
         run: |
@@ -46,14 +49,14 @@ jobs:
           echo "Found project directory at: $PROJECT_DIR"
           cd "$PROJECT_DIR"
           
-          # Nếu chưa có gradlew, tạo wrapper bằng gradle hệ thống (vừa cài)
+          # Tạo wrapper với đúng version Gradle (nếu chưa có)
           if [ ! -f "./gradlew" ]; then
             echo "gradlew not found, generating wrapper..."
-            gradle wrapper
+            gradle wrapper --gradle-version 8.10.2
           fi
           
           chmod +x gradlew
-          ./gradlew build --no-daemon
+          ./gradlew build --no-daemon --stacktrace   # thêm stacktrace để debug nếu cần
 
       - name: Upload Built Jar Artifact
         uses: actions/upload-artifact@v4

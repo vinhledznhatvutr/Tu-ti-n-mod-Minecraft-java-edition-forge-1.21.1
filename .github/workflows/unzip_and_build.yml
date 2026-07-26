@@ -1,4 +1,4 @@
- name: Unzip and Build Mod
+name: Unzip and Build Mod
 
 on:
   push:
@@ -10,33 +10,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Find and unzip .zip file
-      run: |
-        ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
-        if [ -n "$ZIP_FILE" ]; then
-          echo "Found zip file: $ZIP_FILE"
-          unzip -o "$ZIP_FILE" -d .
-        else
-          echo "No zip file found, proceeding with repository layout."
-        fi
+      - name: Find and unzip .zip file
+        run: |
+          ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
+          if [ -n "$ZIP_FILE" ]; then
+            echo "Found zip file: $ZIP_FILE"
+            unzip -o "$ZIP_FILE" -d .
+          else
+            echo "No zip file found, proceeding with repository layout."
+          fi
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
-    - name: Make gradlew executable
-      run: chmod +x gradlew || true
+      - name: Make gradlew executable
+        run: chmod +x gradlew || true
 
-    - name: Build with Gradle
-      run: ./gradlew build --no-daemon
+      - name: Build with Gradle
+        run: ./gradlew build --no-daemon
 
-    - name: Upload Built Jar Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: flyinginstrument-jar
-        path: build/libs/*.jar
+      - name: Upload Built Jar Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flyinginstrument-jar
+          path: build/libs/*.jar

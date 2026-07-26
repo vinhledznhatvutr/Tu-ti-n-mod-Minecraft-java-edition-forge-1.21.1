@@ -35,22 +35,28 @@ jobs:
           gradle-version: '8.10.2'
           cache-read-only: true
 
-      - name: Locate project and patch build.gradle
+      - name: Patch build.gradle to fix reobfJar issue
         run: |
           cd extracted_src
-          
           BUILD_FILE=$(find . -name "build.gradle" | head -n 1)
           if [ -z "$BUILD_FILE" ]; then
             echo "Error: Could not find build.gradle anywhere!"
             exit 1
           fi
-          
           echo "Found build.gradle at: $BUILD_FILE"
-          echo "Patching to remove reobfJar dependency..."
+          
+          # Xóa các dòng có dependsOn reobfJar
           sed -i '/dependsOn.*reobfJar/d' "$BUILD_FILE"
           
+          # Thêm task reobfJar rỗng nếu chưa có
+          if ! grep -q "task reobfJar" "$BUILD_FILE"; then
+            echo "Adding dummy task reobfJar {} to build.gradle"
+            echo -e "\ntask reobfJar {}" >> "$BUILD_FILE"
+          fi
+          
+          echo "Patch completed."
+          
           PROJECT_DIR=$(dirname "$BUILD_FILE")
-          echo "Project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
           
           # Tạo wrapper nếu chưa có
@@ -58,13 +64,12 @@ jobs:
             echo "gradlew not found, generating wrapper..."
             gradle wrapper --gradle-version 8.10.2
           fi
-          
           chmod +x gradlew
 
-      - name: Build with Gradle
+      - name: Build with Gradle (jar task)
         run: |
           cd extracted_src/$(find extracted_src -name "build.gradle" -exec dirname {} \; | head -n 1)
-          ./gradlew build --no-daemon --stacktrace
+          ./gradlew jar --no-daemon --stacktrace
 
       - name: Upload Built Jar Artifact
         uses: actions/upload-artifact@v4

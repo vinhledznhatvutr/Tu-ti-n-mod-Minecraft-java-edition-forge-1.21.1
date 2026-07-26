@@ -45,7 +45,7 @@ jobs:
           fi
           echo "Found build.gradle at: $BUILD_FILE"
           
-          # Xóa các dòng có dependsOn reobfJar
+          # Xóa dòng dependsOn reobfJar
           sed -i '/dependsOn.*reobfJar/d' "$BUILD_FILE"
           
           # Thêm task reobfJar rỗng nếu chưa có
@@ -54,12 +54,9 @@ jobs:
             echo -e "\ntask reobfJar {}" >> "$BUILD_FILE"
           fi
           
-          echo "Patch completed."
-          
           PROJECT_DIR=$(dirname "$BUILD_FILE")
           cd "$PROJECT_DIR"
           
-          # Tạo wrapper nếu chưa có
           if [ ! -f "./gradlew" ]; then
             echo "gradlew not found, generating wrapper..."
             gradle wrapper --gradle-version 8.10.2
@@ -68,7 +65,14 @@ jobs:
 
       - name: Build with Gradle (jar task)
         run: |
-          cd extracted_src/$(find extracted_src -name "build.gradle" -exec dirname {} \; | head -n 1)
+          cd extracted_src
+          PROJECT_DIR=$(find . -name "build.gradle" -exec dirname {} \; | head -n 1)
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Error: Could not find build.gradle"
+            exit 1
+          fi
+          echo "Build directory: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
           ./gradlew jar --no-daemon --stacktrace
 
       - name: Upload Built Jar Artifact

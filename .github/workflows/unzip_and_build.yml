@@ -19,8 +19,6 @@ jobs:
           if [ -n "$ZIP_FILE" ]; then
             echo "Found zip file: $ZIP_FILE"
             unzip -o "$ZIP_FILE" -d .
-          else
-            echo "No zip file found, proceeding with repository layout."
           fi
 
       - name: Set up JDK 21
@@ -29,14 +27,24 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew || true
-
-      - name: Build with Gradle
-        run: ./gradlew build --no-daemon
+      - name: Locate project directory and build
+        run: |
+          # Tìm thư mục chứa file gradlew
+          GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "Error: Could not find gradlew file anywhere!"
+            exit 1
+          fi
+          
+          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
+          echo "Found project directory at: $PROJECT_DIR"
+          
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew build --no-daemon
 
       - name: Upload Built Jar Artifact
         uses: actions/upload-artifact@v4
         with:
           name: flyinginstrument-jar
-          path: build/libs/*.jar
+          path: "**/build/libs/*.jar"

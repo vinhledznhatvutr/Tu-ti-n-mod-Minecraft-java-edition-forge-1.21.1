@@ -33,9 +33,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.10.2'
-          cache-read-only: true   # tránh lỗi cache (nếu có)
+          cache-read-only: true
 
-      - name: Locate project and build
+      - name: Locate project and patch build.gradle
         run: |
           cd extracted_src
           
@@ -45,18 +45,26 @@ jobs:
             exit 1
           fi
           
+          echo "Found build.gradle at: $BUILD_FILE"
+          echo "Patching to remove reobfJar dependency..."
+          sed -i '/dependsOn.*reobfJar/d' "$BUILD_FILE"
+          
           PROJECT_DIR=$(dirname "$BUILD_FILE")
-          echo "Found project directory at: $PROJECT_DIR"
+          echo "Project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
           
-          # Tạo wrapper với đúng version Gradle (nếu chưa có)
+          # Tạo wrapper nếu chưa có
           if [ ! -f "./gradlew" ]; then
             echo "gradlew not found, generating wrapper..."
             gradle wrapper --gradle-version 8.10.2
           fi
           
           chmod +x gradlew
-          ./gradlew build --no-daemon --stacktrace   # thêm stacktrace để debug nếu cần
+
+      - name: Build with Gradle
+        run: |
+          cd extracted_src/$(find extracted_src -name "build.gradle" -exec dirname {} \; | head -n 1)
+          ./gradlew build --no-daemon --stacktrace
 
       - name: Upload Built Jar Artifact
         uses: actions/upload-artifact@v4
